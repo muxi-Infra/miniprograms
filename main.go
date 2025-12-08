@@ -3,29 +3,35 @@ package main
 import (
 	"MiniPrograms/api"
 	"MiniPrograms/responsity/cache"
+	"MiniPrograms/responsity/conf"
 	"MiniPrograms/responsity/dao"
 	"MiniPrograms/responsity/model"
 	"fmt"
+	"log"
+	"net/http"
+	"time"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 	"gorm.io/gorm"
-	"log"
-	"net/http"
-	"time"
 )
 
 var (
-	username string
-	password string
+	//username string
+	//password string
+	config conf.Config
 )
 
 func main() {
 	// 初始化配置
-	initConfig()
-	db, err := dao.InitDB()
+	err := initConfig()
 	if err != nil {
-		log.Fatalf("数据库初始化失败: %v", err)
+		log.Fatalf("解析配置失败:%v", err)
+	}
+	db, err := dao.InitDB(&config)
+	if err != nil {
+		log.Fatalf("数据库初始化失败: %v,%s", err, config.Data.Dsn)
 	}
 
 	s := newService(db)
@@ -36,6 +42,9 @@ func main() {
 	g.POST("/checkStatus", s.CheckStatus) // 检查项目状态
 	g.PUT("/setStatus", s.SetStatus)      // 设置项目状态
 
+	g.POST("/change/checkStatus", s.ChangeCheckStatus)
+	g.PUT("/change/setStatus", s.ChangeSetStatus)
+
 	// 启动服务
 	if err := g.Run(":8080"); err != nil {
 		log.Fatalf("服务启动失败: %v", err)
@@ -43,7 +52,7 @@ func main() {
 }
 
 // 读取配置文件
-func initConfig() {
+func initConfig() error {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath("./config")
@@ -52,8 +61,14 @@ func initConfig() {
 		log.Fatalf("读取配置文件失败: %v", err)
 	}
 
-	username = viper.GetString("username")
-	password = viper.GetString("password")
+	err := viper.Unmarshal(&config)
+	if err != nil {
+		log.Fatalf("")
+		return err
+	}
+
+	return nil
+
 }
 
 type Service struct {
@@ -70,16 +85,31 @@ func newService(db *gorm.DB) *Service {
 
 // CheckStatus 检查项目状态
 func (s *Service) CheckStatus(ctx *gin.Context) {
+	s.Check(ctx, false)
+}
+
+func (s *Service) ChangeCheckStatus(ctx *gin.Context) {
+	s.Check(ctx, true)
+}
+
+func (s *Service) Check(ctx *gin.Context, isChange bool) {
 	var req api.CheckStatusReq
 	if err := ctx.ShouldBind(&req); err != nil {
 		s.errorResponse(ctx, http.StatusBadRequest, 5001, err.Error())
-		return
+
 	}
 
-	p, err := s.getMiniProgram(req.Name)
+	var p *model.MiniPrograms
+	var err error
+	if isChange {
+		p, err = s.getMiniProgram(req.Name, "change_miniprograms")
+	} else {
+		p, err = s.getMiniProgram(req.Name, "miniprograms")
+	}
+
 	if err != nil {
 		s.errorResponse(ctx, http.StatusBadRequest, 5001, "不存在的项目名称")
-		return
+
 	}
 
 	ctx.JSON(http.StatusOK, api.Resp{
@@ -87,22 +117,38 @@ func (s *Service) CheckStatus(ctx *gin.Context) {
 		Msg:  "获取成功!",
 		Data: api.CheckStatusResp{Status: p.Status},
 	})
+
 }
 
 // SetStatus 设置项目状态
 func (s *Service) SetStatus(ctx *gin.Context) {
+	s.Set(ctx, false)
+}
+
+func (s *Service) ChangeSetStatus(ctx *gin.Context) {
+	s.Set(ctx, true)
+}
+
+func (s *Service) Set(ctx *gin.Context, isChange bool) {
 	var req api.SetStatusReq
 	if err := ctx.ShouldBind(&req); err != nil {
 		s.errorResponse(ctx, http.StatusBadRequest, 4001, err.Error())
 		return
 	}
 
-	if req.Username != username || req.Password != password {
+	if req.Username != config.Username || req.Password != config.Password {
 		s.errorResponse(ctx, http.StatusUnauthorized, 4001, "认证失败!")
 		return
 	}
 
-	p, err := s.getOrCreateMiniProgram(req.ProgramsName, req.Status)
+	var p *model.MiniPrograms
+	var err error
+	if isChange {
+		p, err = s.getOrCreateMiniProgram(req.ProgramsName, req.Status, "change_miniprograms")
+	} else {
+		p, err = s.getOrCreateMiniProgram(req.ProgramsName, req.Status, "miniprograms")
+	}
+
 	if err != nil {
 		s.errorResponse(ctx, http.StatusInternalServerError, 5002, fmt.Sprintf("保存失败: %v", err))
 		return
@@ -115,12 +161,12 @@ func (s *Service) SetStatus(ctx *gin.Context) {
 }
 
 // getMiniProgram 从缓存或数据库获取项目
-func (s *Service) getMiniProgram(name string) (*model.MiniPrograms, error) {
+func (s *Service) getMiniProgram(name string, table string) (*model.MiniPrograms, error) {
 	if p, ok := s.cache.Load(name); ok {
 		return p, nil
 	}
 
-	p, err := s.DAO.Find(name)
+	p, err := s.DAO.Find(name, table)
 	if err != nil {
 		return nil, err
 	}
@@ -130,12 +176,12 @@ func (s *Service) getMiniProgram(name string) (*model.MiniPrograms, error) {
 }
 
 // getOrCreateMiniProgram 获取或创建项目
-func (s *Service) getOrCreateMiniProgram(name string, status bool) (*model.MiniPrograms, error) {
-	p, err := s.DAO.Find(name)
+func (s *Service) getOrCreateMiniProgram(name string, status bool, table string) (*model.MiniPrograms, error) {
+	p, err := s.DAO.Find(name, table)
 	if err != nil {
 		// 如果项目不存在，创建新项目
 		p = &model.MiniPrograms{Name: name, Status: status}
-		if err := s.DAO.Save(*p); err != nil {
+		if err := s.DAO.Save(*p, table); err != nil {
 			return nil, err
 		}
 		s.cache.Store(name, p)
@@ -144,7 +190,7 @@ func (s *Service) getOrCreateMiniProgram(name string, status bool) (*model.MiniP
 
 	// 更新状态并保存
 	p.Status = status
-	if err := s.DAO.Save(*p); err != nil {
+	if err := s.DAO.Save(*p, table); err != nil {
 		return nil, err
 	}
 
