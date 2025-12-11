@@ -15,6 +15,108 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/change/checkStatus": {
+            "post": {
+                "description": "根据项目名称检查该变更项目的状态",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "变更项目状态管理"
+                ],
+                "summary": "检查变更项目状态",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "项目名称",
+                        "name": "name",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功响应",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.Resp"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/api.CheckStatusResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "错误响应",
+                        "schema": {
+                            "$ref": "#/definitions/api.Resp"
+                        }
+                    }
+                }
+            }
+        },
+        "/change/setStatus": {
+            "put": {
+                "description": "根据项目名称和状态更新该变更项目的状态",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "变更项目状态管理"
+                ],
+                "summary": "设置变更项目状态",
+                "parameters": [
+                    {
+                        "description": "项目状态更新请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.SetStatusReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功响应",
+                        "schema": {
+                            "$ref": "#/definitions/api.Resp"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/api.Resp"
+                        }
+                    },
+                    "401": {
+                        "description": "认证失败",
+                        "schema": {
+                            "$ref": "#/definitions/api.Resp"
+                        }
+                    },
+                    "500": {
+                        "description": "保存失败",
+                        "schema": {
+                            "$ref": "#/definitions/api.Resp"
+                        }
+                    }
+                }
+            }
+        },
         "/checkStatus": {
             "post": {
                 "description": "根据项目名称检查该项目的状态",
@@ -23,6 +125,9 @@ const docTemplate = `{
                 ],
                 "produces": [
                     "application/json"
+                ],
+                "tags": [
+                    "项目状态管理"
                 ],
                 "summary": "检查项目状态",
                 "parameters": [
@@ -91,7 +196,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "认证失败或其他错误",
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/api.Resp"
+                        }
+                    },
+                    "401": {
+                        "description": "认证失败",
                         "schema": {
                             "$ref": "#/definitions/api.Resp"
                         }

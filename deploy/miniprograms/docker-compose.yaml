@@ -9,3 +9,5 @@ services:
     volumes:
       - ./config:/app/config
       - ./db:/app/db
+    environment:
+      - NACOSDSN=localhost:8848?namespace=default&username=nacos&password=1234&group=QA&dataId=my-service

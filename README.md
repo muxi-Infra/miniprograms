@@ -2,10 +2,9 @@
 
 ## 概述:
 
-这个是用来规避小程序审核的服务,运行时需要启动两个一样的服务
-
+这个是用来规避小程序审核的服务,运行时只需要启动一个服务
 - miniprograms
-- miniprograms_changer
+
 
 基本使用方式为
 
@@ -31,7 +30,7 @@
 
 基于golang1.23开发
 
-- 数据库：sqlite(并发写效率极低，但是并发读没问题，运行需要开启cgo)，极其适合这种轻量级场景
+- 数据库：mysql
 - 缓存：sync.map(同样低频写,高频读)
 - 框架：gin+gorm
 - MVC架构(其实所有业务逻辑都在main函数里面算不上mvc...)
@@ -46,7 +45,6 @@
 
 
 
-需要部署在两个域名下，为了不影响正在使用的服务，更换时前端应当切换到另一个域名
-
+需要部署在一个域名下，更换时前端只需要加/change路由
 - miniprograms.muxixyz.com
-- miniprogramschanger.muxixyz.com
+
