@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"MiniPrograms/responsity/conf"
+	"MiniPrograms/conf"
 	"bytes"
 	"log"
 	"net/url"

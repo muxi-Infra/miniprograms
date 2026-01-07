@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/change/checkStatus": {
             "post": {
-                "description": "根据项目名称检查该变更项目的状态",
+                "description": "从 change_miniprograms 表中查询状态",
                 "consumes": [
                     "application/json"
                 ],
@@ -25,21 +25,23 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "变更项目状态管理"
+                    "change"
                 ],
-                "summary": "检查变更项目状态",
+                "summary": "查询变更项目状态",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "项目名称",
-                        "name": "name",
-                        "in": "query",
-                        "required": true
+                        "description": "查询参数",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.CheckStatusReq"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功响应",
+                        "description": "OK",
                         "schema": {
                             "allOf": [
                                 {
@@ -57,7 +59,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "错误响应",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/api.Resp"
                         }
@@ -67,7 +69,7 @@ const docTemplate = `{
         },
         "/change/setStatus": {
             "put": {
-                "description": "根据项目名称和状态更新该变更项目的状态",
+                "description": "更新 change_miniprograms 表中的状态",
                 "consumes": [
                     "application/json"
                 ],
@@ -75,13 +77,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "变更项目状态管理"
+                    "change"
                 ],
                 "summary": "设置变更项目状态",
                 "parameters": [
                     {
-                        "description": "项目状态更新请求",
-                        "name": "request",
+                        "description": "设置参数",
+                        "name": "req",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -91,25 +93,25 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功响应",
+                        "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/api.Resp"
                         }
                     },
                     "400": {
-                        "description": "请求参数错误",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/api.Resp"
                         }
                     },
                     "401": {
-                        "description": "认证失败",
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/api.Resp"
                         }
                     },
                     "500": {
-                        "description": "保存失败",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/api.Resp"
                         }
@@ -119,7 +121,7 @@ const docTemplate = `{
         },
         "/checkStatus": {
             "post": {
-                "description": "根据项目名称检查该项目的状态",
+                "description": "根据项目名称查询当前启用状态",
                 "consumes": [
                     "application/json"
                 ],
@@ -127,21 +129,23 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "项目状态管理"
+                    "base"
                 ],
-                "summary": "检查项目状态",
+                "summary": "查询项目状态",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "项目名称",
-                        "name": "name",
-                        "in": "query",
-                        "required": true
+                        "description": "查询参数",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.CheckStatusReq"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功响应",
+                        "description": "OK",
                         "schema": {
                             "allOf": [
                                 {
@@ -159,7 +163,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "错误响应",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/api.Resp"
                         }
@@ -169,18 +173,21 @@ const docTemplate = `{
         },
         "/setStatus": {
             "put": {
-                "description": "根据项目名称和状态更新该项目的状态",
+                "description": "创建或更新项目状态（需要用户名密码）",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
+                "tags": [
+                    "base"
+                ],
                 "summary": "设置项目状态",
                 "parameters": [
                     {
-                        "description": "项目状态更新请求",
-                        "name": "request",
+                        "description": "设置参数",
+                        "name": "req",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -190,25 +197,25 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功响应",
+                        "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/api.Resp"
                         }
                     },
                     "400": {
-                        "description": "请求参数错误",
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/api.Resp"
                         }
                     },
                     "401": {
-                        "description": "认证失败",
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/api.Resp"
                         }
                     },
                     "500": {
-                        "description": "保存失败",
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/api.Resp"
                         }
@@ -218,6 +225,14 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "api.CheckStatusReq": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "api.CheckStatusResp": {
             "type": "object",
             "properties": {
