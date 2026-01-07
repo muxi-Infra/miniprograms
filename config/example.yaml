@@ -1,2 +1,4 @@
 username: "你好"
 password : "再见"
+data:
+  dsn: username:password@tcp(127.0.0.1:3306)/database?parseTime=True
