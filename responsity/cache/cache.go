@@ -30,3 +30,11 @@ func (c *Cache) Load(key string) (*model.MiniPrograms, bool) {
 func (c *Cache) Store(key string, resp *model.MiniPrograms) {
 	c.cache.Store(key, resp)
 }
+
+func (c *Cache) GetIFChangePreFix(key string, ifChange bool) string {
+	if ifChange {
+		return key
+	} else {
+		return "change:" + key
+	}
+}

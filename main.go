@@ -2,8 +2,8 @@ package main
 
 import (
 	"MiniPrograms/api"
+	"MiniPrograms/conf"
 	"MiniPrograms/responsity/cache"
-	"MiniPrograms/responsity/conf"
 	"MiniPrograms/responsity/dao"
 	"MiniPrograms/responsity/model"
 	"MiniPrograms/utils"
@@ -98,11 +98,30 @@ func newService(db *gorm.DB) *Service {
 	}
 }
 
-// CheckStatus 检查项目状态
+// CheckStatus godoc
+// @Summary 查询项目状态
+// @Description 根据项目名称查询当前启用状态
+// @Tags base
+// @Accept application/json
+// @Produce application/json
+// @Param req body api.CheckStatusReq true "查询参数"
+// @Success 200 {object} api.Resp{data=api.CheckStatusResp}
+// @Failure 400 {object} api.Resp
+// @Router /checkStatus [post]
 func (s *Service) CheckStatus(ctx *gin.Context) {
 	s.Check(ctx, false)
 }
 
+// ChangeCheckStatus godoc
+// @Summary 查询变更项目状态
+// @Description 从 change_miniprograms 表中查询状态
+// @Tags change
+// @Accept application/json
+// @Produce application/json
+// @Param req body api.CheckStatusReq true "查询参数"
+// @Success 200 {object} api.Resp{data=api.CheckStatusResp}
+// @Failure 400 {object} api.Resp
+// @Router /change/checkStatus [post]
 func (s *Service) ChangeCheckStatus(ctx *gin.Context) {
 	s.Check(ctx, true)
 }
@@ -129,11 +148,34 @@ func (s *Service) Check(ctx *gin.Context, isChange bool) {
 
 }
 
-// SetStatus 设置项目状态
+// SetStatus godoc
+// @Summary 设置项目状态
+// @Description 创建或更新项目状态（需要用户名密码）
+// @Tags base
+// @Accept application/json
+// @Produce application/json
+// @Param req body api.SetStatusReq true "设置参数"
+// @Success 200 {object} api.Resp
+// @Failure 400 {object} api.Resp
+// @Failure 401 {object} api.Resp
+// @Failure 500 {object} api.Resp
+// @Router /setStatus [put]
 func (s *Service) SetStatus(ctx *gin.Context) {
 	s.Set(ctx, false)
 }
 
+// ChangeSetStatus godoc
+// @Summary 设置变更项目状态
+// @Description 更新 change_miniprograms 表中的状态
+// @Tags change
+// @Accept application/json
+// @Produce application/json
+// @Param req body api.SetStatusReq true "设置参数"
+// @Success 200 {object} api.Resp
+// @Failure 400 {object} api.Resp
+// @Failure 401 {object} api.Resp
+// @Failure 500 {object} api.Resp
+// @Router /change/setStatus [put]
 func (s *Service) ChangeSetStatus(ctx *gin.Context) {
 	s.Set(ctx, true)
 }
@@ -172,7 +214,8 @@ func (s *Service) chooseDao(isChange bool) *dao.MiniProgramsDAO {
 
 // getMiniProgram 从缓存或数据库获取项目
 func (s *Service) getMiniProgram(name string, isChange bool) (*model.MiniPrograms, error) {
-	if p, ok := s.cache.Load(name); ok {
+	key := s.cache.GetIFChangePreFix(name, isChange)
+	if p, ok := s.cache.Load(key); ok {
 		return p, nil
 	}
 
@@ -182,13 +225,15 @@ func (s *Service) getMiniProgram(name string, isChange bool) (*model.MiniProgram
 		return nil, err
 	}
 
-	s.cache.Store(name, p)
+	s.cache.Store(key, p)
 	return p, nil
 }
 
 // getOrCreateMiniProgram 获取或创建项目
 func (s *Service) getOrCreateMiniProgram(name string, status bool, isChange bool) (*model.MiniPrograms, error) {
 	daoExample := s.chooseDao(isChange)
+	key := s.cache.GetIFChangePreFix(name, isChange)
+
 	p, err := daoExample.Find(name)
 	if err != nil {
 		// 如果项目不存在，创建新项目
@@ -196,7 +241,8 @@ func (s *Service) getOrCreateMiniProgram(name string, status bool, isChange bool
 		if err := daoExample.Save(*p); err != nil {
 			return nil, err
 		}
-		s.cache.Store(name, p)
+
+		s.cache.Store(key, p)
 		return p, nil
 	}
 
@@ -206,7 +252,7 @@ func (s *Service) getOrCreateMiniProgram(name string, status bool, isChange bool
 		return nil, err
 	}
 
-	s.cache.Store(name, p)
+	s.cache.Store(key, p)
 	return p, nil
 }
 

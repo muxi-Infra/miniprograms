@@ -1,7 +1,7 @@
 package dao
 
 import (
-	"MiniPrograms/responsity/conf"
+	"MiniPrograms/conf"
 	"MiniPrograms/responsity/model"
 	"fmt"
 
