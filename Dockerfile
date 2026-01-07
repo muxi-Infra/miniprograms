@@ -24,8 +24,6 @@ WORKDIR /app
 
 # 复制编译结果和配置文件
 COPY --from=builder /app/app .
-COPY --from=builder /app/config /app/config
-COPY --from=builder /app/db /app/db
 # 暴露端口（根据应用需要）
 EXPOSE 8080
 
