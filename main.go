@@ -219,8 +219,8 @@ func (s *Service) getMiniProgram(name string, isChange bool) (*model.MiniProgram
 		return p, nil
 	}
 
-	daoExample := s.chooseDao(isChange)
-	p, err := daoExample.Find(name)
+	Dao := s.chooseDao(isChange)
+	p, err := Dao.Find(name)
 	if err != nil {
 		return nil, err
 	}
@@ -231,14 +231,14 @@ func (s *Service) getMiniProgram(name string, isChange bool) (*model.MiniProgram
 
 // getOrCreateMiniProgram 获取或创建项目
 func (s *Service) getOrCreateMiniProgram(name string, status bool, isChange bool) (*model.MiniPrograms, error) {
-	daoExample := s.chooseDao(isChange)
+	Dao := s.chooseDao(isChange)
 	key := s.cache.GetIFChangePreFix(name, isChange)
 
-	p, err := daoExample.Find(name)
+	p, err := Dao.Find(name)
 	if err != nil {
 		// 如果项目不存在，创建新项目
 		p = &model.MiniPrograms{Name: name, Status: status}
-		if err := daoExample.Save(*p); err != nil {
+		if err := Dao.Save(*p); err != nil {
 			return nil, err
 		}
 
@@ -248,7 +248,7 @@ func (s *Service) getOrCreateMiniProgram(name string, status bool, isChange bool
 
 	// 更新状态并保存
 	p.Status = status
-	if err := daoExample.Save(*p); err != nil {
+	if err := Dao.Save(*p); err != nil {
 		return nil, err
 	}
 
